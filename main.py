@@ -141,7 +141,51 @@ class Applicant(User):
         except ValueError:
             print("Invalid input.")
 
+    def viewProjects(self, projects):
+        """
+        Override to display only the projects that this Applicant is eligible for,
+        and that have > 0 units in the relevant flat type(s), and are visible.
+        """
+        eligible_projects = []
 
+        if self.marital_status.lower() == "single" and self.age < 35:
+            print("You are under 35 and single; no projects are eligible.")
+            return
+
+        if self.marital_status.lower() != "single" and self.age < 21:
+            print("You are under 21 and married; no projects are eligible.")
+            return
+
+        if self.marital_status.lower() == "single":
+            can_apply_types = ["2-Room"]
+        else:
+            can_apply_types = ["2-Room", "3-Room"]
+
+        for p in projects:
+            if not p.visibility:
+                continue
+
+            has_available_type = False
+            for t in can_apply_types:
+                if t in p.flatTypes and p.flatTypes[t]["units"] > 0:
+                    has_available_type = True
+                    break
+
+            if has_available_type:
+                eligible_projects.append(p)
+
+        if not eligible_projects:
+            print("No projects available based on your eligibility and current unit availability.")
+            return
+
+        print("==== Eligible Projects ====")
+        for p in eligible_projects:
+            print(f"[ProjectID={p.projectID}] {p.projectName} | Neighborhood: {p.neighborhood} | Visible: {p.visibility}")
+            if p.applicationOpenDate and p.applicationCloseDate:
+                print(f"   Application Period: {p.applicationOpenDate} to {p.applicationCloseDate}")
+            for ft, info in p.flatTypes.items():
+                print(f"   {ft}: {info['units']} units, Price: {info['price']}")
+            print()
 class HDBOfficer(Applicant):
     """
     HDBOfficer now inherits from Applicant, so it has
