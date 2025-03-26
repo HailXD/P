@@ -62,6 +62,10 @@ class Applicant(User):
                 print("Married applicants can apply for 2-Room or 3-Room only.")
                 return
 
+        if project.flatTypes[flat_type]["units"] <= 0:
+            print(f"No available units for {flat_type} in project '{project.projectName}'.")
+            return
+
         app = Application(self, project, flat_type)
         application_controller.createApplication(app)
         self.applications.append(app)
