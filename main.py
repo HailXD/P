@@ -1,7 +1,6 @@
 import csv
 import datetime
 
-
 class User:
     """
     Base class for all users (Applicant, HDBOfficer, HDBManager).
@@ -22,7 +21,7 @@ class User:
         Default: show all projects (including hidden).
         Subclasses can override or filter if desired.
         """
-        print("==== All Projects====")
+        print("==== All Projects ====")
         for p in projects:
             p.displayInfo()
 
@@ -186,6 +185,8 @@ class Applicant(User):
             for ft, info in p.flatTypes.items():
                 print(f"   {ft}: {info['units']} units, Price: {info['price']}")
             print()
+
+
 class HDBOfficer(Applicant):
     """
     HDBOfficer now inherits from Applicant, so it has
@@ -439,7 +440,6 @@ class Inquiry:
         self.response = response
 
 
-
 class ApplicationController:
     def __init__(self):
         self.applications = []
@@ -484,7 +484,6 @@ class ProjectController:
             if p.projectID == pid:
                 return p
         return None
-
 
 
 def parse_date(date_str):
@@ -581,6 +580,7 @@ def load_projects(filename, manager_list, officer_list):
             projects.append(new_project)
     return projects
 
+
 def main():
     print("=== HDB BTO Application System (Python) ===")
 
@@ -610,18 +610,24 @@ def main():
                 return user
         return None
 
-    current_user = None
+    def convert_flat_input(user_input):
+        if user_input == '2':
+            return "2-Room"
+        elif user_input == '3':
+            return "3-Room"
+        else:
+            return None
 
     while True:
-        if not current_user:
+        if not globals().get('current_user'):
             print("\n1. Login")
             print("0. Exit")
             choice = input("Choice: ")
             if choice == '1':
                 user = login()
                 if user:
-                    current_user = user
-                    print(f"Welcome, {current_user.name} ({current_user.__class__.__name__})!")
+                    globals()['current_user'] = user
+                    print(f"Welcome, {user.name} ({user.__class__.__name__})!")
                 else:
                     print("Invalid NRIC or password.")
             elif choice == '0':
@@ -630,6 +636,8 @@ def main():
             else:
                 print("Invalid choice.")
         else:
+            current_user = globals()['current_user']
+
             if isinstance(current_user, Applicant) and not isinstance(current_user, HDBOfficer):
                 print("\nApplicant Menu")
                 print("1. View All Projects")
@@ -647,6 +655,9 @@ def main():
                     current_user.viewProjects(proj_controller.projects)
                 elif choice == '2':
                     pid = input("Enter Project ID to apply: ")
+                    if not pid.isdigit():
+                        print("Invalid project ID.")
+                        continue
                     project = proj_controller.findProjectByID(int(pid))
                     if not project:
                         print("Project not found.")
@@ -659,8 +670,12 @@ def main():
                         if not (project.applicationOpenDate <= today <= project.applicationCloseDate):
                             print("Not within application period.")
                             continue
-                    ft = input("Enter flat type (2-Room or 3-Room): ")
-                    current_user.applyForProject(project, ft, app_controller)
+                    ft_input = input("Enter flat type (2 or 3): ")
+                    ft_converted = convert_flat_input(ft_input)
+                    if not ft_converted:
+                        print("Invalid flat type choice.")
+                        continue
+                    current_user.applyForProject(project, ft_converted, app_controller)
                 
                 elif choice == '3':
                     current_user.viewApplicationStatus()
@@ -683,7 +698,7 @@ def main():
                     current_user.changePassword(new_pw)
                 
                 elif choice == '9':
-                    current_user = None
+                    globals()['current_user'] = None
                 else:
                     print("Invalid choice.")
 
@@ -709,6 +724,9 @@ def main():
                     current_user.viewProjects(proj_controller.projects)
                 elif choice == '2':
                     pid = input("Enter Project ID to apply: ")
+                    if not pid.isdigit():
+                        print("Invalid project ID.")
+                        continue
                     project = proj_controller.findProjectByID(int(pid))
                     if not project:
                         print("Project not found.")
@@ -718,8 +736,12 @@ def main():
                         if not (project.applicationOpenDate <= today <= project.applicationCloseDate):
                             print("Not within application period.")
                             continue
-                    ft = input("Enter flat type (2-Room or 3-Room): ")
-                    current_user.applyForProject(project, ft, app_controller)
+                    ft_input = input("Enter flat type (2 or 3): ")
+                    ft_converted = convert_flat_input(ft_input)
+                    if not ft_converted:
+                        print("Invalid flat type choice.")
+                        continue
+                    current_user.applyForProject(project, ft_converted, app_controller)
 
                 elif choice == '3':
                     current_user.viewApplicationStatus()
@@ -739,6 +761,9 @@ def main():
 
                 elif choice == '8':
                     pid = input("Enter Project ID to register as Officer: ")
+                    if not pid.isdigit():
+                        print("Invalid project ID.")
+                        continue
                     project = proj_controller.findProjectByID(int(pid))
                     if not project:
                         print("Project not found.")
@@ -761,11 +786,15 @@ def main():
                     if not current_user.handling_project:
                         print("You are not currently assigned to any project.")
                         continue
-                    ft = input("Enter flat type to update (2-Room or 3-Room): ")
+                    ft_input = input("Enter flat type to update (2 or 3): ")
+                    ft_converted = convert_flat_input(ft_input)
+                    if not ft_converted:
+                        print("Invalid flat type choice.")
+                        continue
                     num = input("Enter number of units booked: ")
                     try:
                         nb = int(num)
-                        current_user.updateFlatAvailability(current_user.handling_project, ft, nb)
+                        current_user.updateFlatAvailability(current_user.handling_project, ft_converted, nb)
                     except ValueError:
                         print("Invalid number.")
 
@@ -790,7 +819,7 @@ def main():
                     current_user.changePassword(new_pw)
 
                 elif choice == '14':
-                    current_user = None
+                    globals()['current_user'] = None
                 else:
                     print("Invalid choice.")
 
@@ -844,6 +873,9 @@ def main():
 
                 elif choice == '3':
                     pid = input("Project ID to edit: ")
+                    if not pid.isdigit():
+                        print("Invalid project ID.")
+                        continue
                     proj = proj_controller.findProjectByID(int(pid))
                     if not proj:
                         print("Project not found.")
@@ -857,12 +889,15 @@ def main():
 
                 elif choice == '4':
                     pid = input("Project ID to toggle: ")
+                    if not pid.isdigit():
+                        print("Invalid project ID.")
+                        continue
                     proj = proj_controller.findProjectByID(int(pid))
                     if not proj:
                         print("Project not found.")
                         continue
-                    vis = input("Set visibility True/False: ")
-                    if vis.lower() in ["true", "t", "1"]:
+                    vis = input("Set visibility (1 for True, 0 for False): ")
+                    if vis == '1':
                         current_user.toggleProjectVisibility(proj, True)
                     else:
                         current_user.toggleProjectVisibility(proj, False)
@@ -884,8 +919,8 @@ def main():
                             idx = int(c) - 1
                             if 0 <= idx < len(pending_apps):
                                 sel_app = pending_apps[idx]
-                                d = input("Approve (Y) or Reject (N)? ")
-                                decision = True if d.lower() == 'y' else False
+                                d = input("Approve or Reject? (1 for Approve, 0 for Reject): ")
+                                decision = (d == '1')
                                 current_user.approveOrRejectApplication(sel_app, decision)
                             else:
                                 print("Invalid choice.")
@@ -907,8 +942,8 @@ def main():
                             idx = int(c) - 1
                             if 0 <= idx < len(w_apps):
                                 sel_app = w_apps[idx]
-                                d = input("Approve (Y) or Reject (N)? ")
-                                decision = True if d.lower() == 'y' else False
+                                d = input("Approve or Reject? (1 for Approve, 0 for Reject): ")
+                                decision = (d == '1')
                                 current_user.approveOrRejectWithdrawal(sel_app, decision)
                             else:
                                 print("Invalid choice.")
@@ -932,8 +967,8 @@ def main():
                             idx = int(c) - 1
                             if 0 <= idx < len(pending_officers):
                                 sel_off = pending_officers[idx]
-                                d = input("Approve (Y) or Reject (N)? ")
-                                decision = True if d.lower() == 'y' else False
+                                d = input("Approve or Reject? (1 for Approve, 0 for Reject): ")
+                                decision = (d == '1')
                                 current_user.approveOrRejectHDBOfficerRegistration(sel_off, decision)
                             else:
                                 print("Invalid choice.")
@@ -978,13 +1013,13 @@ def main():
                     current_user.changePassword(new_pw)
 
                 elif choice == '12':
-                    current_user = None
+                    globals()['current_user'] = None
                 else:
                     print("Invalid choice.")
 
             else:
                 print("Unknown user type. Logging out.")
-                current_user = None
+                globals()['current_user'] = None
 
 
 if __name__ == "__main__":
